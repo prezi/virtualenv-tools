@@ -26,6 +26,7 @@ ACTIVATION_SCRIPTS = [
 ]
 _pybin_match = re.compile(r'^python\d+\.\d+$')
 _activation_path_re = re.compile(r'^(?:set -gx |setenv |)VIRTUAL_ENV[ =]"(.*?)"\s*$')
+_src_match = re.compile(r'^.*/src/(.*)$')
 
 
 def update_activation_script(script_filename, new_path):
@@ -158,6 +159,42 @@ def update_local(base, new_path):
             print 'L %s' % filename
 
 
+def update_source_path(path, new_path):
+    match = _src_match.match(path)
+    if match:
+        return '%s/src/%s' % (new_path, match.group(1))
+    else:
+        return path
+
+
+def update_easy_install_path(filename, new_path):
+    with open(filename) as f:
+        lines = f.readlines()
+
+    output = [update_source_path(line.strip(), new_path) for line in lines]
+    with open(filename, 'w') as f:
+        for line in output:
+            f.write('%s\n' % line)
+
+    print 'E %s' % filename
+
+
+def update_egg_paths(lib_dir, new_path):
+    """Fix path in egg files, so that packages installed from source would
+    work.
+    """
+    lib_dir = os.path.join(lib_dir, 'site-packages')
+    # fix easy-install.pth first, if exists
+    pth_file = os.path.join(lib_dir, 'easy-install.pth')
+    if os.path.exists(pth_file):
+        update_easy_install_path(pth_file, new_path)
+
+    # fix all .egg-link files
+    for filename in os.listdir(lib_dir):
+        if filename.endswith('.egg-link'):
+            update_easy_install_path(os.path.join(lib_dir, filename), new_path)
+
+
 def update_paths(base, new_path):
     """Updates all paths in a virtualenv to a new one."""
     if new_path == 'auto':
@@ -186,6 +223,7 @@ def update_paths(base, new_path):
     update_scripts(bin_dir, new_path)
     update_pycs(lib_dir, new_path, lib_name)
     update_local(base, new_path)
+    update_egg_paths(lib_dir, new_path)
 
     return True
 
