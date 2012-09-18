@@ -26,7 +26,7 @@ ACTIVATION_SCRIPTS = [
 ]
 _pybin_match = re.compile(r'^python\d+\.\d+$')
 _activation_path_re = re.compile(r'^(?:set -gx |setenv |)VIRTUAL_ENV[ =]"(.*?)"\s*$')
-_src_match = re.compile(r'^.*/src/(.*)$')
+_src_match = re.compile(r'^/.*(/src/[^/]+)$')
 
 
 def update_activation_script(script_filename, new_path):
@@ -161,10 +161,7 @@ def update_local(base, new_path):
 
 def update_source_path(path, new_path):
     match = _src_match.match(path)
-    if match:
-        return '%s/src/%s' % (new_path, match.group(1))
-    else:
-        return path
+    return ''.join((new_path, match.group(1))) if match else path
 
 
 def update_easy_install_path(filename, new_path):
