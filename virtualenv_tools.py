@@ -17,6 +17,7 @@ import marshal
 import optparse
 import subprocess
 from types import CodeType
+from contextlib import contextmanager
 
 
 ACTIVATION_SCRIPTS = [
@@ -223,6 +224,17 @@ def update_paths(base, new_path):
 
     return True
 
+@contextmanager
+def save_easy_install(lib_dir):
+    content = None
+    fn = os.path.join(lib_dir, 'site-packages/easy-install.pth')
+    if os.path.exists(fn):
+        with open(fn) as fd:
+            content = fd.read()
+    yield
+    if content:
+        with open(fn, 'w') as fd:
+            fd.write(content)
 
 def reinitialize_virtualenv(path):
     """Re-initializes a virtualenv."""
@@ -261,12 +273,13 @@ def reinitialize_virtualenv(path):
            filename.endswith('.egg'):
             args.append('--distribute')
 
-    new_env = {}
-    for key, value in os.environ.items():
-        if not key.startswith('VIRTUALENV_'):
-            new_env[key] = value
-    args.append(path)
-    subprocess.Popen(args, env=new_env).wait()
+    with save_easy_install(lib_dir):
+        new_env = {}
+        for key, value in os.environ.items():
+            if not key.startswith('VIRTUALENV_'):
+                new_env[key] = value
+        args.append(path)
+        subprocess.Popen(args, env=new_env).wait()
 
 
 def main():
