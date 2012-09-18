@@ -168,10 +168,9 @@ def update_easy_install_path(filename, new_path):
     with open(filename) as f:
         lines = f.readlines()
 
-    output = [update_source_path(line.strip(), new_path) for line in lines]
     with open(filename, 'w') as f:
-        for line in output:
-            f.write('%s\n' % line)
+        for line in lines:
+            f.write('%s\n' % update_source_path(line.strip(), new_path))
 
     print 'E %s' % filename
 
