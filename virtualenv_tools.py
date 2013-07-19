@@ -28,7 +28,7 @@ ACTIVATION_SCRIPTS = [
 _pybin_match = re.compile(r'^python\d+\.\d+$')
 _activation_path_re = re.compile(r'^(?:set -gx |setenv |)VIRTUAL_ENV[ =]"(.*?)"\s*$')
 _src_match = re.compile(r'^/.*(/src/[^/]+)$')
-
+_thriftify_generated_match = re.compile(r'^/.*(/src/[^/]+/generated/py)$')
 
 def update_activation_script(script_filename, new_path):
     """Updates the paths for the activate shell scripts."""
@@ -162,7 +162,12 @@ def update_local(base, new_path):
 
 def update_source_path(path, new_path):
     match = _src_match.match(path)
-    return ''.join((new_path, match.group(1))) if match else path
+    if match:
+        return ''.join((new_path, match.group(1)))
+    match = _thriftify_generated_match.match(path)
+    if match:
+        return ''.join((new_path, match.group(1)))
+    return path
 
 
 def update_easy_install_path(filename, new_path):
