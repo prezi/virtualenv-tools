@@ -55,3 +55,19 @@
      do is to relink the builds.
 
 
+ROLLING DEBIAN PACKAGES:
+# Get FPM if necessary:
+gem install fpm
+
+# Create deb package
+From the virtualenv-tools source dir, run the following command with the new version number:
+fpm -t deb -s python -n python-virtualenv-tools -m infra@prezi.com --prefix /usr/local/ --description "A set of tools for virtualenv" --url "http://github.com/prezi/virtualenv-tools" -v 1.1-0prezi3 --no-python-dependencies --python-bin /usr/bin/python2.6 --python-install-lib lib/python2.6/dist-packages setup.py
+
+# Uploading the package
+Copy the file to oam3, then run (remember to use the version you just created):
+cp python-virtualenv-tools_1.1-0prezi3_all.deb /var/www/packages.prezi.com/pool/main/p/python-virtualenv-tools/
+deb-s3-wrapper upload -b package-repository-private -p --codename=prezi-precise --arch=amd64 /var/www/packages.prezi.com/pool/main/p/python-virtualenv-tools/python-virtualenv-tools_1.1-0prezi3_all.deb
+deb-s3-wrapper upload -b package-repository-private -p --codename=prezi-lucid --arch=amd64 /var/www/packages.prezi.com/pool/main/p/python-virtualenv-tools/python-virtualenv-tools_1.1-0prezi3_all.deb
+
+# Changing the version to use in Chef
+add action: upgrade to the package def in chef
