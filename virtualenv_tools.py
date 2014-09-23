@@ -26,6 +26,7 @@ ACTIVATION_SCRIPTS = [
 ]
 _pybin_match = re.compile(r'^python\d+\.\d+$')
 _activation_path_re = re.compile(r'^(?:set -gx |setenv |)VIRTUAL_ENV[ =]"(.*?)"\s*$')
+_shebang_bin_re = re.compile(r'.*/bin/python(\d+(\.\d+)?)?$')
 
 
 def update_activation_script(script_filename, new_path):
@@ -65,11 +66,13 @@ def update_script(script_filename, new_path):
     if not args:
         return
 
-    if not args[0].endswith('/bin/python') or \
+    if not _shebang_bin_re.match(args[0]) or \
        '/usr/bin/env python' in args[0]:
         return
 
-    new_bin = os.path.join(new_path, 'bin', 'python')
+    python = args[0].split('/')[-1]
+
+    new_bin = os.path.join(new_path, 'bin', python)
     if new_bin == args[0]:
         return
 
