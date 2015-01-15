@@ -108,7 +108,6 @@ def update_pyc(filename, new_path):
                         code.co_freevars, code.co_cellvars)
 
     def _process(code):
-        new_filename = new_path
         consts = []
         for const in code.co_consts:
             if type(const) is CodeType:
@@ -129,8 +128,6 @@ def update_pyc(filename, new_path):
 
 def update_pycs(lib_dir, new_path, lib_name):
     """Walks over all pyc files and updates their paths."""
-    files = []
-
     def get_new_path(filename):
         filename = os.path.normpath(filename)
         if filename.startswith(lib_dir.rstrip('/') + '/'):
@@ -227,6 +224,7 @@ def update_paths(base, new_path):
 
     return True
 
+
 @contextmanager
 def save_easy_install(lib_dir):
     content = None
@@ -238,6 +236,7 @@ def save_easy_install(lib_dir):
     if content:
         with open(fn, 'w') as fd:
             fd.write(content)
+
 
 def reinitialize_virtualenv(path):
     """Re-initializes a virtualenv."""
@@ -257,7 +256,7 @@ def reinitialize_virtualenv(path):
         return False
 
     sys_py_executable = subprocess.Popen(['which', py_ver],
-        stdout=subprocess.PIPE).communicate()[0].strip()
+                                         stdout=subprocess.PIPE).communicate()[0].strip()
 
     if not sys_py_executable:
         print 'error: could not find system version for expected python ' \
@@ -268,7 +267,7 @@ def reinitialize_virtualenv(path):
 
     args = ['virtualenv', '-p', sys_py_executable]
     if not os.path.isfile(os.path.join(lib_dir,
-            'no-global-site-packages.txt')):
+                                       'no-global-site-packages.txt')):
         args.append('--system-site-packages')
 
     for filename in os.listdir(lib_dir):
