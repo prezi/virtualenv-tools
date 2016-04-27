@@ -156,7 +156,7 @@ def update_local(base, new_path):
         target = '../%s' % folder
         if os.path.islink(filename) and os.readlink(filename) != target:
             os.remove(filename)
-            os.symlink('../%s' % folder, filename)
+            os.symlink(os.path.join(new_path, folder), filename)
             print 'L %s' % filename
 
 
