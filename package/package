@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+#
+# Package virtualenv-tools into .deb package with fpm.
+#
+# Notes:
+# - This script is designed to run inside a container, so the error handling
+#   is minimal. However, if you have fpm install you can run directly on
+#   your host.
+
+set -euo pipefail
+
+: ${APP_VERSION:?Must be set! (a.k.a. virtualenv_tools application version) See: README}
+: ${PACKAGE_ITERATION:?Must be set! (a.k.a. debian_revision) See: README}
+: ${PACKAGE_MAINTAINER:?Must be set! format: First Last <first.last@prezi.com>}
+
+function main() {
+  fpm \
+    --verbose \
+    --output-type deb \
+    --input-type python \
+    --name python-virtualenv-tools \
+    --maintainer "${PACKAGE_MAINTAINER}" \
+    --prefix /usr/local/ \
+    --description "A set of tools for virtualenv deployment, makes it possible to relocate virtualenvs" \
+    --url "http://github.com/prezi/virtualenv-tools" \
+    --version ${APP_VERSION}-${PACKAGE_ITERATION}prezi \
+    --deb-no-default-config-files \
+    --deb-priority 'optional' \
+    --no-python-dependencies \
+    --python-bin /usr/bin/python2.7 \
+    --python-install-lib lib/python2.7/dist-packages \
+    setup.py
+
+    cd package
+    mv ../*.deb .
+}
+
+main "$@"
