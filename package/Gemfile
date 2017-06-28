@@ -1,0 +1,6 @@
+# Note:
+# - I won't specify Ruby version here. I use exact pinning in the Dockerfile.
+
+source 'https://rubygems.org' do
+  gem 'fpm', '1.6.3'
+end

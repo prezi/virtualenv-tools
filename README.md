@@ -57,41 +57,56 @@ do is to relink the builds.
 
 # Prezi specific notes
 
-## ROLLING DEBIAN PACKAGES:
-### Get FPM if necessary:
-gem install fpm
+# Package creation for virtualenv-tools
 
-### Finding out the new package version
-The package version should follow the pattern below:
-`<version-number>-<build-number>prezi`
+## How to use it
 
-`<version-number>` is a semantic version number which is on the commit as a git tag (e.g. 1.2)
+Define the environment variables `PACKAGE_ITERATION`, `PACKAGE_VERSION` and
+`PACKAGE_MAINTAINER`.
 
-`<build-number>` is just an integer counter starting from 0 and incremented on every build of the same semantic version.
+- `PACKAGE_ITERATION` is related to
+[`debian_revision`](https://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-Version).
+That number starts from 0 and incremented by 1 every time you rebuild a
+package with the same application version. If the application version
+changes then revision number goes back to 0.
+[See next section for detailed help](#choosing-iteration-number)
+- `PACKAGE_MAINTAINER` can be just infra@prezi.com
+- `APP_VERSION` is the application version of virtualenv-tools. It is a semantic
+version number which is on the commit as a git tag (e.g. 1.2). This means that if
+you have changed the code, please add the new version number as a git tag.
 
-So e.g. the 3rd build of the 1.2 version is `1.2-2prezi`
+### Host requirements
 
-This means that if you have changed the code, please add the new version number as a git tag.
+- docker
+- make
 
-### Create deb package
+### Backing the `.deb` package
 
-From the virtualenv-tools source dir, run the following command with the new package version:
-```
-fpm -t deb -s python -n python-virtualenv-tools -m infra@prezi.com --prefix /usr/local/ --description "A set of tools for virtualenv" --url "http://github.com/prezi/virtualenv-tools" -v <package-version> --no-python-dependencies --python-bin /usr/bin/python2.7 --python-install-lib lib/python2.6/dist-packages setup.py
-```
+Now you should be ready to call `make` in the `package` directory. What will happen?
+
+1. Make will build an image for packaging, then
+2. spins up a container from that image with your `$PWD` mounted.
+3. `package` script will build a deb package from `virtualenv-tools`
+5. At the end your `.deb` package should be in the `package` current folder.
 
 ### Uploading the package
 
-Decide which ubuntu version you would like to deploy for, this defines the codename you have to use, e.g. ubuntu-xenial or ubuntu-precise.
-Copy the file to oam3 and upload the deb package (remember to use the actual package version):
+Decide which ubuntu version you would like to deploy for, this defines the codename
+you have to use, e.g. `prezi-xenial` or `prezi-precise`.
+Copy the file to `oam3` and upload the deb package with the `deb-s3-wrapper-public` script.
 
+***Warning:*** Be careful with the upload, because there is no way to undo it and remove the package. Moreover, if you upload a package with a new iteration number, the same packages with earlier iteration numbers will not be accessible.
+
+
+Example:
 ```
-cp python-virtualenv-tools_<package-version>_all.deb /var/www/packages.prezi.com/pool/main/p/python-virtualenv-tools/`
-
-deb-s3-wrapper upload -b package-repository-public -p --codename=<codename> --arch=amd64 /var/www/packages.prezi.com/pool/main/p/python-virtualenv-tools/python-virtualenv-tools_1.1-0prezi3_all.deb
+deb-s3-wrapper-public upload -b package-repository-public -p --codename=prezi-xenial --arch=amd64 python-virtualenv-tools_1.2-1prezi_all.deb
 ```
 
 Note: If you would like to upload for multiple ubuntu versions you have to run the upload command multiple times with different codename parameters.
 
 ### Changing the version to use in Chef
-add action: upgrade to the package def in chef
+Check if you have to update the pinned package in the
+[virtualenv_tools.rb](https://github.com/prezi/prezi-chef/blob/master/cookbooks/python/recipes/virtualenv_tools.rb) recipe.
+
+Currently we pin the version for `lucid`, `precise` and `trusty`, but not for `xenial`.
